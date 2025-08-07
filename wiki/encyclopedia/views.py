@@ -30,17 +30,14 @@ def entry(request, title):
 def search(request):
     q = request.GET.get('q', '')
     entries = util.list_entries()
+    search_results = []
     for entry in entries:
-        if q in entry:
-            return render(request, "encyclopedia/entry.html", {
-                "title": entry,
-                "entry": util.get_entry(entry)
-            })
+        if q.lower() in entry.lower():
+            search_results.append(entry)
     
-
-    return render(request, "encyclopedia/entry.html", {
-        "title": q,
-        "entry": "Entry not found"
+    return render(request, "encyclopedia/search.html", {
+        "q": q,
+        "entries": search_results
     })
 
 def create(request):

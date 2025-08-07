@@ -5,6 +5,10 @@
 {% endblock %}
 
 {% block body %}
-    <p>You searched for: {{ q }}</p>
-    <p>You searched for: {{ name }}</p>
+    <h1>Search Results for "{{ q }}"</h1>
+    <ul>
+        {% for entry in entries %}
+            <li><a href="{% url 'entry' entry %}">{{ entry }}</a></li>
+        {% endfor %}
+    </ul>
 {% endblock %}
