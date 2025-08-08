@@ -2,6 +2,24 @@
 
 {% block body %}
     <h2>Active Listings</h2>
+    <a href="{% url 'create' %}">Create Listing</a>
 
-    TODO
+    <div class="row">
+        {% for listing in listings %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ listing.title }}</h5>
+                        <p class="card-text">{{ listing.description }}</p>
+                        <p class="card-text">Starting Bid: ${{ listing.starting_bid }}</p>
+                        <p class="card-text">Category: {{ listing.category }}</p>
+                        <p class="card-text">Created at: {{ listing.created_at }}</p>
+                        <p class="card-text">Updated at: {{ listing.updated_at }}</p>
+                        <p class="card-text">Owner: {{ listing.owner }}</p>
+                        <p class="card-text">Image: <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="width: 100%; height: 100%; object-fit: cover;"></p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}
