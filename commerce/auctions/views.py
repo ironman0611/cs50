@@ -193,3 +193,12 @@ def comment(request, listing_id):
         return HttpResponseRedirect(reverse("listing", args=[listing_id]))
     return HttpResponseRedirect(reverse("listing", args=[listing_id]))
 
+def categories(request):
+    categories = (
+        Listing.objects.exclude(category="").values_list("category", flat=True).distinct()
+    )
+    return render(request, "auctions/categories.html", {"categories": categories})
+
+def category(request, category):
+    listings = Listing.objects.filter(category=category)
+    return render(request, "auctions/category.html", {"listings": listings, "category": category})
