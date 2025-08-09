@@ -131,7 +131,7 @@ def watchlist(request):
         return render(request, "auctions/watchlist.html", {"watchlist": listings})
     else:
         return HttpResponseRedirect(reverse("login"))
-        
+
 def bid(request, listing_id):
     user = request.user
     if user.is_authenticated:
