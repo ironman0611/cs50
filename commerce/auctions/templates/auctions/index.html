@@ -10,6 +10,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">{{ listing.title }}</h5>
+                        <a href="{% url 'listing' listing.id %}">View Listing</a>
                         <p class="card-text">{{ listing.description }}</p>
                         <p class="card-text">Starting Bid: ${{ listing.starting_bid }}</p>
                         <p class="card-text">Category: {{ listing.category }}</p>

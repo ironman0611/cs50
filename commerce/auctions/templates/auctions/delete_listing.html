@@ -1,0 +1,9 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Listing Closed</h2>
+    <p>Listing: {{ listing.title }}</p>
+    <p>Owner: {{ listing.owner }}</p>
+    <p>Created at: {{ listing.created_at }}</p>
+    <p>Updated at: {{ listing.updated_at }}</p>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Listing:</h2>
+    <h3>{{ listing.title }}</h3>
+    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="width: 20%; height: 20%; object-fit: cover;">
+    <p>{{ listing.description }}</p>
+    <p>Starting Bid: ${{ listing.starting_bid }}</p>
+    <p>Category: {{ listing.category }}</p>
+    <p>Created at: {{ listing.created_at }}</p>
+    <p>Updated at: {{ listing.updated_at }}</p>
+    <p>Owner: {{ listing.owner }}</p>
+    <form action="{% url 'watchlist' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="listing_id" value="{{ listing.id }}"/>
+        <input type="submit" name="button" value="Add to Watchlist"/>
+    </form>
+    {% if not listing.is_active %}
+        <div class="alert alert-warning" role="alert">Listing is closed.</div>
+        {% if top_bid %}
+            <p>Winner: {{ top_bid.bidder }} with ${{ top_bid.amount }}</p>
+            {% if user_won %}
+                <div class="alert alert-success" role="alert">You won this listing!</div>
+            {% endif %}
+        {% else %}
+            <p>No bids were placed.</p>
+        {% endif %}
+    {% else %}
+        <form action="{% url 'bid' listing.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="listing_id" value="{{ listing.id }}"/>
+            <input type="number" step="0.01" name="bid_amount" placeholder="Enter bid amount"/>
+            <input type="submit" name="button" value="Place Bid"/>
+        </form>
+    {% endif %}
+    <p>Current Bid: ${{ top_bid.amount|default:listing.starting_bid }}</p>
+    <p>Highest Bidder: {{ top_bid.bidder|default:"—" }}</p>
+    <p>Bids: {{ listing.bids.count }}</p>
+    {% if user.is_authenticated and user == listing.owner and listing.is_active %}
+        <form action="{% url 'close' listing.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="listing_id" value="{{ listing.id }}"/>
+            <input type="submit" name="button" value="Close Listing"/>
+        </form>
+    {% endif %}
+
+    {% if user.is_authenticated and user == listing.owner %}
+        <form action="{% url 'delete_listing' listing.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="listing_id" value="{{ listing.id }}"/>
+            <input type="submit" name="button" value="Delete Listing"/>
+        </form>
+    {% endif %}
+    <form action="{% url 'comment' listing.id %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="listing_id" value="{{ listing.id }}"/>
+        <input type="text" name="comment" placeholder="Enter comment"/>
+        <input type="submit" name="button" value="Submit"/>
+    </form>
+    <h3>Comments</h3>
+    {% for comment in listing.comments.all %}
+        <p style="font-weight: bold;">{{ comment.author }}</p>
+        <p> {{  comment.content }}</p>
+    {% endfor %}
+{% endblock %}
