@@ -30,8 +30,20 @@ def compose(request):
         return JsonResponse({"error": "POST request required."}, status=400)
 
     # Check recipient emails
-    data = json.loads(request.body)
-    emails = [email.strip() for email in data.get("recipients").split(",")]
+    try:
+        data = json.loads(request.body)
+        print("Received data:", data)
+    except json.JSONDecodeError as e:
+        print("JSON decode error:", e)
+        return JsonResponse({"error": "Invalid JSON data."}, status=400)
+    
+    recipients_data = data.get("recipients")
+    if not recipients_data:
+        return JsonResponse({
+            "error": "Recipients field is required."
+        }, status=400)
+        
+    emails = [email.strip() for email in recipients_data.split(",")]
     if emails == [""]:
         return JsonResponse({
             "error": "At least one recipient required."
@@ -67,7 +79,6 @@ def compose(request):
         email.save()
         for recipient in recipients:
             email.recipients.add(recipient)
-        email.save()
 
     return JsonResponse({"message": "Email sent successfully."}, status=201)
 
@@ -109,7 +120,18 @@ def email(request, email_id):
     # Return email contents
     if request.method == "GET":
         return JsonResponse(email.serialize())
-
+    elif request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        email.recipients.add(data["recipient"])
+        email.subject = data["subject"]
+        email.body = data["body"]
+        email.sender = request.user
+        email.read = False
+        email.archived = False
+        email.save()
+        return HttpResponse(status=204)
+        
     # Update whether email is read or should be archived
     elif request.method == "PUT":
         data = json.loads(request.body)
