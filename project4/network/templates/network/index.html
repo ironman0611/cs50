@@ -1,0 +1,61 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+<div class="container " style="margin: 10px;">
+     <h3>All Posts</h3>
+
+     <div class="container " style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+        <form action="{% url 'post' %}" method="post">
+            {% csrf_token %}
+            <div>
+                <label for="content">New Post</label>
+            </div>
+            <div class="form-group">
+                <textarea type="textarea" rows="4" style="width: 100%;" name="content"></textarea>
+            </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-primary" value="Post">
+            </div>
+        </form>
+     </div>
+
+     {% for post in posts %}
+     <div class="container " style=" margin-top: 10px; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+        <div>
+            <label for="username">{{ post.user.username }}</label>
+            </div>
+            <div>
+                <label for="content">Edit</label>
+                <div>
+                    {{ post.content }}
+                </div>
+                <div>
+                    <small
+                        class="text-muted js-local-timestamp"
+                        data-timestamp="{{ post.timestamp|date:'c' }}"
+                    >
+                        {{ post.timestamp }}
+                    </small>
+                </div>
+                <div>
+                    Like
+                </div>
+                <div>
+                    Comment
+                </div>
+            </div>
+     </div>
+     {% endfor %}
+</div>
+<script>
+    document.querySelectorAll(".js-local-timestamp").forEach(function (element) {
+        const rawTimestamp = element.dataset.timestamp;
+        if (!rawTimestamp) return;
+
+        const date = new Date(rawTimestamp);
+        if (Number.isNaN(date.getTime())) return;
+
+        element.textContent = date.toLocaleString();
+    });
+</script>
+{% endblock %}
