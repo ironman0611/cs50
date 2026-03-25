@@ -1,0 +1,57 @@
+{% extends "network/layout.html" %}
+
+{% block title %}{{ profile_user.username }} — Social Network{% endblock %}
+
+{% block body %}
+<div class="container" style="margin: 10px;">
+    <h3>{{ profile_user.username }}</h3>
+    <p>
+        <strong>Followers:</strong> {{ follower_count }}
+        &nbsp;|&nbsp;
+        <strong>Following:</strong> {{ following_count }}
+    </p>
+    {% if show_follow_button %}
+    <form action="{% url 'follow_toggle' profile_user.username %}" method="post" style="margin-bottom: 1rem;">
+        {% csrf_token %}
+        {% if is_following %}
+        <button type="submit" class="btn btn-secondary">Unfollow</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary">Follow</button>
+        {% endif %}
+    </form>
+    {% endif %}
+
+    <h4>Posts</h4>
+    {% for post in posts %}
+    <div class="container" style="margin-top: 10px; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+        <div>
+            <a href="{% url 'profile' post.user.username %}">{{ post.user.username }}</a>
+        </div>
+        <div>
+            <div>{{ post.content }}</div>
+            <div>
+                <small
+                    class="text-muted js-local-timestamp"
+                    data-timestamp="{{ post.timestamp|date:'c' }}"
+                >
+                    {{ post.timestamp }}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">No posts yet.</p>
+    {% endfor %}
+</div>
+<script>
+    document.querySelectorAll(".js-local-timestamp").forEach(function (element) {
+        const rawTimestamp = element.dataset.timestamp;
+        if (!rawTimestamp) return;
+
+        const date = new Date(rawTimestamp);
+        if (Number.isNaN(date.getTime())) return;
+
+        element.textContent = date.toLocaleString();
+    });
+</script>
+{% endblock %}
