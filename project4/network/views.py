@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -8,14 +9,42 @@ from django.urls import reverse
 from .models import Post, User
 
 
+def paginate_posts(request, posts_queryset):
+    paginator = Paginator(posts_queryset, 10)
+    page_number = request.GET.get("page")
+    return paginator.get_page(page_number)
+
+
 def index(request):
-    posts = Post.objects.order_by("-timestamp").all()
-    return render(request, "network/index.html", {"posts": posts})
+    posts = paginate_posts(request, Post.objects.order_by("-timestamp").all())
+    return render(
+        request,
+        "network/index.html",
+        {"posts": posts, "page_heading": "All Posts"},
+    )
+
+
+@login_required
+def following_view(request):
+    following_ids = request.user.following.values_list("pk", flat=True)
+    posts = paginate_posts(
+        request,
+        Post.objects.filter(user_id__in=following_ids)
+        .select_related("user")
+        .order_by("-timestamp"),
+    )
+    return render(
+        request,
+        "network/index.html",
+        {"posts": posts, "page_heading": "Following"},
+    )
 
 
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(user=profile_user).order_by("-timestamp")
+    posts = paginate_posts(
+        request, Post.objects.filter(user=profile_user).order_by("-timestamp")
+    )
     follower_count = profile_user.followers.count()
     following_count = profile_user.following.count()
     show_follow_button = (

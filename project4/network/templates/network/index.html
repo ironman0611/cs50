@@ -1,8 +1,10 @@
 {% extends "network/layout.html" %}
 
+{% block title %}{{ page_heading }} — Social Network{% endblock %}
+
 {% block body %}
 <div class="container " style="margin: 10px;">
-     <h3>All Posts</h3>
+     <h3>{{ page_heading }}</h3>
 
      <div class="container " style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
         <form action="{% url 'post' %}" method="post">
@@ -46,6 +48,19 @@
             </div>
      </div>
      {% endfor %}
+
+    <div class="d-flex justify-content-between mt-3">
+        <div>
+            {% if posts.has_previous %}
+            <a class="btn btn-outline-secondary" href="?page={{ posts.previous_page_number }}">Previous</a>
+            {% endif %}
+        </div>
+        <div>
+            {% if posts.has_next %}
+            <a class="btn btn-outline-primary" href="?page={{ posts.next_page_number }}">Next</a>
+            {% endif %}
+        </div>
+    </div>
 </div>
 <script>
     document.querySelectorAll(".js-local-timestamp").forEach(function (element) {
