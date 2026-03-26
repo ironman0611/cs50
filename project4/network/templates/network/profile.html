@@ -23,12 +23,22 @@
 
     <h4>Posts</h4>
     {% for post in posts %}
-    <div class="container" style="margin-top: 10px; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+    <div class="container js-post-card" data-post-id="{{ post.id }}" style="margin-top: 10px; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
         <div>
             <a href="{% url 'profile' post.user.username %}">{{ post.user.username }}</a>
         </div>
         <div>
-            <div>{{ post.content }}</div>
+            {% if user.is_authenticated and user == post.user %}
+            <button type="button" class="btn btn-sm btn-outline-secondary js-edit-button">Edit</button>
+            {% endif %}
+            <div class="js-post-content" style="margin-top: 10px;">{{ post.content }}</div>
+            <div class="js-edit-container" style="display: none; margin-top: 10px;">
+                <textarea class="form-control js-edit-textarea" rows="3"></textarea>
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn btn-sm btn-primary js-save-button">Save</button>
+                    <button type="button" class="btn btn-sm btn-light js-cancel-button">Cancel</button>
+                </div>
+            </div>
             <div>
                 <small
                     class="text-muted js-local-timestamp"
@@ -57,6 +67,67 @@
     </div>
 </div>
 <script>
+    function getCookie(name) {
+        const cookieValue = `; ${document.cookie}`;
+        const parts = cookieValue.split(`; ${name}=`);
+        if (parts.length === 2) {
+            return parts.pop().split(";").shift();
+        }
+        return null;
+    }
+
+    document.querySelectorAll(".js-post-card").forEach(function (card) {
+        const editButton = card.querySelector(".js-edit-button");
+        if (!editButton) return;
+
+        const contentElement = card.querySelector(".js-post-content");
+        const editContainer = card.querySelector(".js-edit-container");
+        const textarea = card.querySelector(".js-edit-textarea");
+        const saveButton = card.querySelector(".js-save-button");
+        const cancelButton = card.querySelector(".js-cancel-button");
+        const postId = card.dataset.postId;
+        const editUrl = `/post/${postId}/edit`;
+
+        editButton.addEventListener("click", function () {
+            textarea.value = contentElement.textContent.trim();
+            contentElement.style.display = "none";
+            editContainer.style.display = "block";
+            editButton.style.display = "none";
+        });
+
+        cancelButton.addEventListener("click", function () {
+            editContainer.style.display = "none";
+            contentElement.style.display = "block";
+            editButton.style.display = "inline-block";
+        });
+
+        saveButton.addEventListener("click", function () {
+            fetch(editUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: new URLSearchParams({ content: textarea.value }),
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Unable to save post.");
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    contentElement.textContent = data.content;
+                    editContainer.style.display = "none";
+                    contentElement.style.display = "block";
+                    editButton.style.display = "inline-block";
+                })
+                .catch(function (error) {
+                    alert(error.message);
+                });
+        });
+    });
+
     document.querySelectorAll(".js-local-timestamp").forEach(function (element) {
         const rawTimestamp = element.dataset.timestamp;
         if (!rawTimestamp) return;

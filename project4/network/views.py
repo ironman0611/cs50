@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
@@ -142,3 +142,21 @@ def post(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/post.html")
+
+
+@login_required
+def edit_post(request, post_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required."}, status=405)
+
+    post = get_object_or_404(Post, pk=post_id)
+    if post.user != request.user:
+        return JsonResponse({"error": "Forbidden."}, status=403)
+
+    content = request.POST.get("content", "").strip()
+    if not content:
+        return JsonResponse({"error": "Content cannot be empty."}, status=400)
+
+    post.content = content
+    post.save()
+    return JsonResponse({"message": "Post updated.", "content": post.content})

@@ -31,3 +31,6 @@ htmlcov/
 
 # OS files
 .DS_Store
+*.pyc
+*.sqlite3
+*.pyc
