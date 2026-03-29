@@ -1,0 +1,11 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Bid</h2>
+    <p>Listing: {{ listing.title }}</p>
+    <p>Starting Bid: ${{ listing.starting_bid }}</p>
+    <p>Current Bid: ${{ listing.current_bid }}</p>
+    <p>Owner: {{ listing.owner }}</p>
+    <p>Created at: {{ listing.created_at }}</p>
+    <p>Updated at: {{ listing.updated_at }}</p>
+{% endblock %}
