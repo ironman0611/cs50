@@ -15,13 +15,26 @@ def paginate_posts(request, posts_queryset):
     return paginator.get_page(page_number)
 
 
+def build_post_context(request, posts, page_heading):
+    liked_post_ids = set()
+    if request.user.is_authenticated:
+        liked_post_ids = set(
+            request.user.liked_posts.filter(pk__in=[post.pk for post in posts])
+            .values_list("pk", flat=True)
+        )
+    return {
+        "posts": posts,
+        "page_heading": page_heading,
+        "liked_post_ids": liked_post_ids,
+        "show_new_post_form": False,
+    }
+
+
 def index(request):
     posts = paginate_posts(request, Post.objects.order_by("-timestamp").all())
-    return render(
-        request,
-        "network/index.html",
-        {"posts": posts, "page_heading": "All Posts"},
-    )
+    context = build_post_context(request, posts, "All Posts")
+    context["show_new_post_form"] = request.user.is_authenticated
+    return render(request, "network/index.html", context)
 
 
 @login_required
@@ -33,11 +46,9 @@ def following_view(request):
         .select_related("user")
         .order_by("-timestamp"),
     )
-    return render(
-        request,
-        "network/index.html",
-        {"posts": posts, "page_heading": "Following"},
-    )
+    context = build_post_context(request, posts, "Following")
+    context["show_new_post_form"] = False
+    return render(request, "network/index.html", context)
 
 
 def profile(request, username):
@@ -61,6 +72,12 @@ def profile(request, username):
         {
             "profile_user": profile_user,
             "posts": posts,
+            "liked_post_ids": set(
+                request.user.liked_posts.filter(pk__in=[post.pk for post in posts])
+                .values_list("pk", flat=True)
+            )
+            if request.user.is_authenticated
+            else set(),
             "follower_count": follower_count,
             "following_count": following_count,
             "show_follow_button": show_follow_button,
@@ -160,3 +177,19 @@ def edit_post(request, post_id):
     post.content = content
     post.save()
     return JsonResponse({"message": "Post updated.", "content": post.content})
+
+
+@login_required
+def toggle_like(request, post_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required."}, status=405)
+
+    post = get_object_or_404(Post, pk=post_id)
+    if post.liked_by.filter(pk=request.user.pk).exists():
+        post.liked_by.remove(request.user)
+        liked = False
+    else:
+        post.liked_by.add(request.user)
+        liked = True
+
+    return JsonResponse({"liked": liked, "like_count": post.liked_by.count()})

@@ -47,6 +47,14 @@
                     {{ post.timestamp }}
                 </small>
             </div>
+            <div>
+                {% if user.is_authenticated %}
+                <button type="button" class="btn btn-sm btn-outline-primary js-like-button">
+                    {% if post.id in liked_post_ids %}Unlike{% else %}Like{% endif %}
+                </button>
+                {% endif %}
+                <span class="js-like-count">{{ post.liked_by.count }}</span> likes
+            </div>
         </div>
     </div>
     {% empty %}
@@ -78,54 +86,81 @@
 
     document.querySelectorAll(".js-post-card").forEach(function (card) {
         const editButton = card.querySelector(".js-edit-button");
-        if (!editButton) return;
-
         const contentElement = card.querySelector(".js-post-content");
         const editContainer = card.querySelector(".js-edit-container");
         const textarea = card.querySelector(".js-edit-textarea");
         const saveButton = card.querySelector(".js-save-button");
         const cancelButton = card.querySelector(".js-cancel-button");
+        const likeButton = card.querySelector(".js-like-button");
+        const likeCount = card.querySelector(".js-like-count");
         const postId = card.dataset.postId;
         const editUrl = `/post/${postId}/edit`;
+        const likeUrl = `/post/${postId}/like`;
 
-        editButton.addEventListener("click", function () {
-            textarea.value = contentElement.textContent.trim();
-            contentElement.style.display = "none";
-            editContainer.style.display = "block";
-            editButton.style.display = "none";
-        });
+        if (editButton) {
+            editButton.addEventListener("click", function () {
+                textarea.value = contentElement.textContent.trim();
+                contentElement.style.display = "none";
+                editContainer.style.display = "block";
+                editButton.style.display = "none";
+            });
 
-        cancelButton.addEventListener("click", function () {
-            editContainer.style.display = "none";
-            contentElement.style.display = "block";
-            editButton.style.display = "inline-block";
-        });
+            cancelButton.addEventListener("click", function () {
+                editContainer.style.display = "none";
+                contentElement.style.display = "block";
+                editButton.style.display = "inline-block";
+            });
 
-        saveButton.addEventListener("click", function () {
-            fetch(editUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": getCookie("csrftoken"),
-                },
-                body: new URLSearchParams({ content: textarea.value }),
-            })
-                .then(function (response) {
-                    if (!response.ok) {
-                        throw new Error("Unable to save post.");
-                    }
-                    return response.json();
+            saveButton.addEventListener("click", function () {
+                fetch(editUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                    body: new URLSearchParams({ content: textarea.value }),
                 })
-                .then(function (data) {
-                    contentElement.textContent = data.content;
-                    editContainer.style.display = "none";
-                    contentElement.style.display = "block";
-                    editButton.style.display = "inline-block";
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Unable to save post.");
+                        }
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        contentElement.textContent = data.content;
+                        editContainer.style.display = "none";
+                        contentElement.style.display = "block";
+                        editButton.style.display = "inline-block";
+                    })
+                    .catch(function (error) {
+                        alert(error.message);
+                    });
+            });
+        }
+
+        if (likeButton) {
+            likeButton.addEventListener("click", function () {
+                fetch(likeUrl, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
                 })
-                .catch(function (error) {
-                    alert(error.message);
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Unable to update like.");
+                        }
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        likeButton.textContent = data.liked ? "Unlike" : "Like";
+                        likeCount.textContent = data.like_count;
+                    })
+                    .catch(function (error) {
+                        alert(error.message);
+                    });
                 });
-        });
+        }
     });
 
     document.querySelectorAll(".js-local-timestamp").forEach(function (element) {
