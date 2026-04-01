@@ -1,0 +1,16 @@
+{% extends 'tracker/layout.html' %}
+{% block body %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1>College Tracker</h1>
+            <p class="lead">Welcome{% if user.is_authenticated %}, {{ user.username }}{% endif %}.</p>
+            <p>You are signed in.</p>
+            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary">Log out</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
