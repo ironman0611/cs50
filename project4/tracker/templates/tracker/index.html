@@ -1,16 +1,41 @@
 {% extends 'tracker/layout.html' %}
 {% block body %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h1>College Tracker</h1>
-            <p class="lead">Welcome{% if user.is_authenticated %}, {{ user.username }}{% endif %}.</p>
-            <p>You are signed in.</p>
-            <form method="post" action="{% url 'logout' %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary">Log out</button>
-            </form>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <span class="navbar-brand">College Tracker</span>
+        <div class="navbar-nav ms-auto">
+            <span class="nav-item text-white me-3">{{ user.username }}</span>
+            <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Logout</a>
         </div>
     </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>My College Applications</h2>
+    
+    {% if applications %}
+    <div class="row mt-4">
+        {% for application in applications %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ application.college.name }}</h5>
+                    <p class="card-text">
+                        <strong>Location:</strong> {{ application.college.location }}<br>
+                        <strong>Deadline:</strong> {{ application.college.application_deadline }}<br>
+                        <strong>Status:</strong> {{ application.get_status_display }}<br>
+                        <strong>Days until deadline:</strong>
+                        <span class="badge bg-{% if application.days_until_deadline < 30 %}danger{% elif application.days_until_deadline < 60 %}warning{% else %}success{% endif %}">
+                            {{ application.days_until_deadline }} days
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You haven't added any college applications yet.</p>
+    {% endif %}
 </div>
 {% endblock %}

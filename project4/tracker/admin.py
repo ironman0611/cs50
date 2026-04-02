@@ -1,6 +1,10 @@
 from django.contrib import admin
 from .models import College, Application, Task
 
+admin.site.site_header = "College Administration"
+admin.site.site_title = "College Administration"
+admin.site.index_title = "College Administration"
+
 class TaskInline(admin.TabularInline):
     model = Task
     extra = 1

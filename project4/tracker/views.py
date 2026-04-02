@@ -4,12 +4,26 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.db import IntegrityError
 
+from .models import College, Application, Task
 from django.shortcuts import render
+from datetime import date
+
+
 
 # Create your views here.
 @login_required
 def index(request):
-    return render(request, 'tracker/index.html')
+    applications = Application.objects.filter(user=request.user)
+    
+    # Calculate days until deadline for each application
+    for app in applications:
+        days_left = (app.college.application_deadline - date.today()).days
+        app.days_until_deadline = days_left
+    
+    context = {
+        'applications': applications
+    }
+    return render(request, 'tracker/index.html', context)
 
 def login_view(request):
     if request.method == 'POST':
