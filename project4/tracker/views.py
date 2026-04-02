@@ -7,8 +7,9 @@ from django.db import IntegrityError
 from .models import College, Application, Task
 from django.shortcuts import render
 from datetime import date
-
-
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 # Create your views here.
 @login_required
@@ -63,3 +64,26 @@ def register(request):
         login(request, user)
         return redirect('index')
     return render(request, 'tracker/register.html')
+
+@login_required
+def get_tasks(request, application_id):
+    application = get_object_or_404(Application, id=application_id, user=request.user)
+    tasks = application.tasks.all()
+    tasks_data = [{
+        'id': task.id,
+        'title': task.title,
+        'description': task.description,
+        'completed': task.completed,
+        'due_date': task.due_date
+    } for task in tasks]
+    return JsonResponse({'tasks': tasks_data})
+
+@login_required
+@csrf_exempt
+def toggle_task(request, task_id):
+    if request.method == 'PUT':
+        task = get_object_or_404(Task, id=task_id, application__user=request.user)
+        task.completed = not task.completed
+        task.save()
+        return JsonResponse({'completed': task.completed})
+    return JsonResponse({'error': 'Invalid method'}, status=400)
