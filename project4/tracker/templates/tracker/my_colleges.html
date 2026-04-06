@@ -6,7 +6,7 @@
 <form method="get" action="{% url 'my_colleges' %}" class="row g-2 mb-4">
     <div class="col-md-8 col-lg-6">
         <label class="visually-hidden" for="mq">Search</label>
-        <input id="mq" class="form-control" type="search" name="q" value="{{ search_query }}" placeholder="Search your colleges by name or location…" autocomplete="off">
+        <input id="mq" class="form-control" type="search" name="q" value="{{ search_query }}" placeholder="Search your colleges (name, location, type, keywords…)" autocomplete="off">
     </div>
     <div class="col-auto d-flex align-items-end">
         <button type="submit" class="btn btn-primary">Search</button>
@@ -27,7 +27,21 @@
                 <div class="fw-semibold">{{ application.college.name }}</div>
                 <div class="small text-muted">{{ application.college.location }}</div>
             </div>
-            <span class="badge bg-primary align-self-start">{{ application.get_status_display }}</span>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% with next_url=request.get_full_path %}
+                {% include "tracker/includes/application_status_form.html" %}
+                {% endwith %}
+                <form
+                    method="post"
+                    action="{% url 'remove_application' application.id %}"
+                    class="d-inline"
+                    onsubmit="return confirm('Remove this college from your list? You can add it again from All colleges.');"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+            </div>
         </div>
         <div class="small mt-2">
             <strong>Deadline:</strong> {{ application.college.application_deadline }}

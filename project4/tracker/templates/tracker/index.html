@@ -85,9 +85,13 @@
             <div class="card-body">
                 <h5 class="card-title">{{ application.college.name }}</h5>
                 <p class="card-text small mb-2">
-                    <strong>Deadline:</strong> {{ application.college.application_deadline }}<br>
-                    <strong>Status:</strong> {{ application.get_status_display }}
+                    <strong>Deadline:</strong> {{ application.college.application_deadline }}
                 </p>
+                <div class="mb-2">
+                    {% with next_url=request.get_full_path %}
+                    {% include "tracker/includes/application_status_form.html" %}
+                    {% endwith %}
+                </div>
                 <span class="badge bg-{% if application.days_until_deadline < 0 %}dark{% elif application.days_until_deadline < 30 %}danger{% elif application.days_until_deadline < 60 %}warning{% else %}success{% endif %}">
                     {% if application.days_until_deadline < 0 %}
                     Deadline passed

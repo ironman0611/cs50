@@ -40,6 +40,19 @@ body {
     color: #0d6efd;
 }
 
+.navbar .nav-link-username {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.nav-link-username:hover {
+    color: #fff;
+}
+
 .sidebar-college-list {
     overflow-y: auto;
     flex: 1;
@@ -56,6 +69,32 @@ body {
 .sidebar-college-link:hover {
     background-color: #f8f9fa;
     color: #0d6efd;
+}
+
+.sidebar-college-link.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.college-detail-hero {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.college-detail-dl dt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6c757d;
+    margin-bottom: 0.15rem;
+}
+
+.college-detail-dl dd {
+    margin-bottom: 1rem;
+}
+
+.college-detail-dl dd:last-child {
+    margin-bottom: 0;
 }
 
 .app-main {

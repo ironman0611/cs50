@@ -1,3 +1,4 @@
+import re
 from datetime import date, timedelta
 
 from django.contrib import messages
@@ -11,8 +12,67 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
-from .models import Application, College, Task
+from .models import Application, College, Task, UserProfile
+
+# All College text fields used for multi-token fuzzy search (each token must match somewhere).
+_COLLEGE_FUZZY_TEXT_FIELDS = (
+    "name",
+    "location",
+    "website",
+    "institution_type",
+    "state",
+    "campus_setting",
+    "climate",
+    "campus_size",
+    "meal_options",
+    "extracurriculars",
+    "housing_summary",
+    "sports_program",
+    "search_notes",
+)
+
+
+def _college_token_q(token: str) -> Q:
+    """OR across columns; partial matches (icontains), not exact preference matching."""
+    combined = Q()
+    for field in _COLLEGE_FUZZY_TEXT_FIELDS:
+        combined |= Q(**{f"{field}__icontains": token})
+    tl = token.lower()
+    if tl in ("aid", "financial", "scholarship", "fafsa", "grants"):
+        combined |= Q(financial_aid_available=True)
+    return combined
+
+
+def filter_colleges_fuzzy(queryset, raw_query: str):
+    raw_query = (raw_query or "").strip()
+    if not raw_query:
+        return queryset
+    tokens = [t for t in re.split(r"\s+", raw_query) if t]
+    if not tokens:
+        return queryset
+    for token in tokens:
+        queryset = queryset.filter(_college_token_q(token))
+    return queryset
+
+
+def filter_applications_by_college_fuzzy(app_queryset, raw_query: str):
+    raw_query = (raw_query or "").strip()
+    if not raw_query:
+        return app_queryset
+    tokens = [t for t in re.split(r"\s+", raw_query) if t]
+    if not tokens:
+        return app_queryset
+    for token in tokens:
+        combined = Q()
+        for field in _COLLEGE_FUZZY_TEXT_FIELDS:
+            combined |= Q(**{f"college__{field}__icontains": token})
+        tl = token.lower()
+        if tl in ("aid", "financial", "scholarship", "fafsa", "grants"):
+            combined |= Q(college__financial_aid_available=True)
+        app_queryset = app_queryset.filter(combined)
+    return app_queryset
 
 
 @login_required
@@ -49,6 +109,7 @@ def index(request):
         {
             "nav_active": "dashboard",
             "applications": upcoming,
+            "application_status_choices": Application.STATUS_CHOICES,
             "metric_total": metric_total,
             "metric_pending": metric_pending,
             "metric_submitted": metric_submitted,
@@ -75,9 +136,7 @@ def all_colleges(request):
     week_ago = timezone.now() - timedelta(days=7)
     colleges = College.objects.all()
     if q:
-        colleges = colleges.filter(
-            Q(name__icontains=q) | Q(location__icontains=q)
-        )
+        colleges = filter_colleges_fuzzy(colleges, q)
     colleges = colleges.annotate(
         recent_order=Case(
             When(created_at__gte=week_ago, then=Value(0)),
@@ -100,11 +159,11 @@ def all_colleges(request):
     paginator = Paginator(colleges, per_page)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    applied_ids = set(
-        Application.objects.filter(user=request.user).values_list(
-            "college_id", flat=True
-        )
-    )
+    user_apps = Application.objects.filter(user=request.user).select_related("college")
+    application_by_college_id = {app.college_id: app for app in user_apps}
+    for college in page_obj:
+        college.user_application = application_by_college_id.get(college.pk)
+
     return render(
         request,
         "tracker/all_colleges.html",
@@ -113,7 +172,27 @@ def all_colleges(request):
             "page_obj": page_obj,
             "search_query": q,
             "per_page_choice": per_page_choice,
-            "applied_college_ids": applied_ids,
+            "application_status_choices": Application.STATUS_CHOICES,
+        },
+    )
+
+
+@login_required
+def college_detail(request, college_id):
+    college = get_object_or_404(College, pk=college_id)
+    user_application = (
+        Application.objects.filter(user=request.user, college=college)
+        .select_related("college")
+        .first()
+    )
+    return render(
+        request,
+        "tracker/college_detail.html",
+        {
+            "nav_active": "",
+            "college": college,
+            "user_application": user_application,
+            "application_status_choices": Application.STATUS_CHOICES,
         },
     )
 
@@ -123,9 +202,7 @@ def my_colleges(request):
     q = request.GET.get("q", "").strip()
     apps = Application.objects.filter(user=request.user).select_related("college")
     if q:
-        apps = apps.filter(
-            Q(college__name__icontains=q) | Q(college__location__icontains=q)
-        )
+        apps = filter_applications_by_college_fuzzy(apps, q)
     apps = apps.order_by("college__application_deadline")
     today = date.today()
     for app in apps:
@@ -137,6 +214,7 @@ def my_colleges(request):
             "nav_active": "my_colleges",
             "applications": apps,
             "search_query": q,
+            "application_status_choices": Application.STATUS_CHOICES,
         },
     )
 
@@ -163,6 +241,40 @@ def apply_college(request):
     if next_url.startswith("/") and not next_url.startswith("//"):
         return redirect(next_url)
     return redirect("all_colleges")
+
+
+@login_required
+@require_POST
+def update_application_status(request, application_id):
+    application = get_object_or_404(Application, pk=application_id, user=request.user)
+    new_status = request.POST.get("status", "")
+    valid_statuses = {choice[0] for choice in Application.STATUS_CHOICES}
+    if new_status not in valid_statuses:
+        messages.error(request, "Invalid status.")
+    else:
+        application.status = new_status
+        application.save(update_fields=["status", "updated_at"])
+        messages.success(
+            request,
+            f'Status for "{application.college.name}" set to {application.get_status_display()}.',
+        )
+    next_url = request.POST.get("next", "")
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect("my_colleges")
+
+
+@login_required
+@require_POST
+def remove_application(request, application_id):
+    application = get_object_or_404(Application, pk=application_id, user=request.user)
+    college_name = application.college.name
+    application.delete()
+    messages.success(request, f'Removed "{college_name}" from your list.')
+    next_url = request.POST.get("next", "")
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect("my_colleges")
 
 
 def login_view(request):
@@ -236,4 +348,37 @@ def toggle_task(request, task_id):
         task.completed = not task.completed
         task.save()
         return JsonResponse({"completed": task.completed})
-    return JsonResponse({"error": "Invalid method"}, status=400)
+
+
+@login_required
+def preferences(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        profile.college_type_preferences = request.POST.get("college_type_preferences", "")
+        profile.meal_plan_preference = request.POST.get("meal_plan_preference", "no_preference")
+        profile.preferred_state = request.POST.get("preferred_state", "")
+        profile.preferred_setting = request.POST.get("preferred_setting", "")
+        raw_dist = request.POST.get("max_distance_from_home", "0")
+        profile.max_distance_from_home = int(raw_dist) if raw_dist.isdigit() else 0
+        profile.preferred_climate = request.POST.get("preferred_climate", "")
+        profile.preferred_campus_size = request.POST.get("preferred_campus_size", "")
+        profile.extracurriculars = ",".join(request.POST.getlist("extracurriculars"))
+        profile.preferred_housing = request.POST.get("preferred_housing", "")
+        profile.sports_program_preference = request.POST.get("sports_program_preference", "")
+        profile.gpa_self_assessment = request.POST.get("gpa_self_assessment", "")
+        raw_sat = request.POST.get("sat_act_score", "0")
+        profile.sat_act_score = int(raw_sat) if raw_sat.isdigit() else 0
+        profile.financial_aid_needed = request.POST.get("financial_aid_needed") == "on"
+        profile.save()
+        messages.success(request, "Your preferences have been saved.")
+        return redirect("preferences")
+
+    saved_extras = profile.extracurriculars.split(",") if profile.extracurriculars else []
+
+    return render(request, "tracker/preferences.html", {
+        "nav_active": "preferences",
+        "profile": profile,
+        "extracurricular_choices": UserProfile.EXTRACURRICULAR_CHOICES,
+        "saved_extracurriculars": saved_extras,
+    })
