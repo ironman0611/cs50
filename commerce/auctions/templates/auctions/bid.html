@@ -1,11 +1,20 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    <h2>Bid</h2>
-    <p>Listing: {{ listing.title }}</p>
-    <p>Starting Bid: ${{ listing.starting_bid }}</p>
-    <p>Current Bid: ${{ listing.current_bid }}</p>
-    <p>Owner: {{ listing.owner }}</p>
-    <p>Created at: {{ listing.created_at }}</p>
-    <p>Updated at: {{ listing.updated_at }}</p>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">{{ listing.title }}</h2>
+                    <ul class="list-unstyled small">
+                        <li><strong>Starting Bid:</strong> ${{ listing.starting_bid }}</li>
+                        <li><strong>Current Bid:</strong> ${{ listing.current_bid }}</li>
+                        <li><strong>Owner:</strong> {{ listing.owner }}</li>
+                        <li><strong>Created:</strong> {{ listing.created_at|date:"M j, Y, g:i a" }}</li>
+                        <li><strong>Updated:</strong> {{ listing.updated_at|date:"M j, Y, g:i a" }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

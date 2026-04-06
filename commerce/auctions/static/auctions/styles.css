@@ -1,3 +1,64 @@
 body {
-    padding: 10px;
+    padding: 0;
+}
+
+/* Card images scale nicely on all screens */
+.card-img-top {
+    width: 100%;
+    object-fit: cover;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 575.98px) {
+    .container.my-4 {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+
+    .card-img-top {
+        height: 150px !important;
+    }
+
+    /* Stack header + button vertically on small screens */
+    .d-flex.justify-content-between.align-items-center.mb-3 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+
+    /* Make bid input group stack if too tight */
+    .input-group {
+        flex-wrap: wrap;
+    }
+
+    .input-group .form-control {
+        min-width: 0;
+    }
+
+    /* Navbar signed-in text wraps better */
+    .navbar-nav .nav-item.mr-2 {
+        font-size: 0.85rem;
+    }
+
+    /* Buttons get more tap area */
+    .btn-sm {
+        padding: 0.4rem 0.75rem;
+    }
+
+    /* Watchlist card actions stack */
+    .card-body .mt-auto.d-flex {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+/* Tablet tweaks */
+@media (max-width: 767.98px) {
+    .card-img-top {
+        height: 160px !important;
+    }
 }
