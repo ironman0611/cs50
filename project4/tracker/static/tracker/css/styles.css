@@ -103,28 +103,76 @@ body {
     min-height: calc(100vh - 56px);
 }
 
-@media (max-width: 768px) {
-    .card {
-        margin-bottom: 1rem;
-    }
+/* Offcanvas sidebar styling */
+.offcanvas .nav-link {
+    color: #333;
+}
 
-    .navbar-brand {
-        font-size: 1rem;
-    }
+.offcanvas .nav-link:hover {
+    background-color: #f1f3f5;
+}
 
+.offcanvas .nav-link.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+/* Mobile styles */
+@media (max-width: 991.98px) {
     .app-layout {
         flex-direction: column;
     }
 
-    .app-sidebar {
-        width: 100%;
-        max-height: none;
-        position: static;
-        border-end: none !important;
-        border-bottom: 1px solid #dee2e6;
+    .app-main {
+        padding: 1rem !important;
     }
 
-    .sidebar-college-list {
-        max-height: 180px;
+    .college-detail-hero .card-body {
+        padding: 1.25rem !important;
+    }
+
+    .college-detail-hero h1 {
+        font-size: 1.4rem;
+    }
+
+    .college-detail-hero .lead {
+        font-size: 1rem;
+    }
+
+    /* Status dropdowns need to fit on small screens */
+    .form-select-sm {
+        min-width: 0 !important;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    h1.h3 {
+        font-size: 1.25rem;
+    }
+
+    .display-6 {
+        font-size: 1.75rem;
+    }
+
+    /* Stack list-group items vertically on phones */
+    .list-group-item .d-flex.flex-wrap.justify-content-between {
+        flex-direction: column;
+    }
+
+    /* Preferences cards go full width */
+    .col-md-6 {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Better touch targets */
+    .btn-sm {
+        padding: 0.4rem 0.75rem;
+    }
+
+    /* Badge wrapping */
+    .badge {
+        font-size: 0.7rem;
     }
 }
