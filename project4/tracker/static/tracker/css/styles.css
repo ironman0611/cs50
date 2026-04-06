@@ -11,3 +11,81 @@ body {
 .card:hover {
     transform: translateY(-5px);
 }
+
+.app-layout {
+    min-height: calc(100vh - 56px);
+}
+
+.app-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    max-height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-sidebar .nav-link {
+    color: #333;
+}
+
+.app-sidebar .nav-link:hover {
+    background-color: #f1f3f5;
+}
+
+.app-sidebar .nav-link.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.sidebar-college-list {
+    overflow-y: auto;
+    flex: 1;
+    max-height: 50vh;
+    border-top: 1px solid #e9ecef;
+    padding-top: 0.5rem;
+}
+
+.sidebar-college-link {
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.sidebar-college-link:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.app-main {
+    min-width: 0;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .app-sidebar {
+        width: 100%;
+        max-height: none;
+        position: static;
+        border-end: none !important;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .sidebar-college-list {
+        max-height: 180px;
+    }
+}

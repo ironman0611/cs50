@@ -1,0 +1,45 @@
+{% extends 'tracker/layout.html' %}
+{% load static %}
+{% block body %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+    <div class="container-fluid">
+        <span class="navbar-brand">College Tracker</span>
+        <div class="navbar-nav ms-auto flex-row align-items-center gap-2">
+            <span class="nav-item text-white small me-2">{{ user.username }}</span>
+            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="app-layout d-flex">
+    <aside class="app-sidebar border-end bg-white">
+        <nav class="nav flex-column p-3 gap-1">
+            <a class="nav-link rounded {% if nav_active == 'dashboard' %}active fw-semibold{% endif %}" href="{% url 'index' %}">Dashboard</a>
+            <a class="nav-link rounded {% if nav_active == 'all_colleges' %}active fw-semibold{% endif %}" href="{% url 'all_colleges' %}">All colleges</a>
+            <a class="nav-link rounded {% if nav_active == 'my_colleges' %}active fw-semibold{% endif %}" href="{% url 'my_colleges' %}">My colleges</a>
+        </nav>
+        <div class="px-3 pb-2 small text-muted text-uppercase">Colleges</div>
+        <div class="sidebar-college-list px-2 pb-3">
+            {% for c in nav_colleges %}
+            <a class="sidebar-college-link d-block py-1 px-2 rounded text-decoration-none text-truncate" href="{% url 'all_colleges' %}?q={{ c.name|urlencode }}" title="{{ c.name }}">{{ c.name }}</a>
+            {% empty %}
+            <p class="px-3 small text-muted mb-0">No colleges yet. Add some in the admin.</p>
+            {% endfor %}
+        </div>
+    </aside>
+    <main class="app-main flex-grow-1 p-4">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% if 'success' in message.tags %}success{% elif 'error' in message.tags %}danger{% elif 'warning' in message.tags %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% block main %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
