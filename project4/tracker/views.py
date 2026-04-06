@@ -4,10 +4,12 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import BooleanField, Case, IntegerField, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import Application, College, Task
@@ -62,12 +64,42 @@ def index(request):
 @login_required
 def all_colleges(request):
     q = request.GET.get("q", "").strip()
+    per_page_raw = request.GET.get("per_page", "20").lower()
+    if per_page_raw == "all":
+        per_page_choice = "all"
+    elif per_page_raw == "10":
+        per_page_choice = "10"
+    else:
+        per_page_choice = "20"
+
+    week_ago = timezone.now() - timedelta(days=7)
     colleges = College.objects.all()
     if q:
         colleges = colleges.filter(
             Q(name__icontains=q) | Q(location__icontains=q)
         )
-    colleges = colleges.order_by("name")
+    colleges = colleges.annotate(
+        recent_order=Case(
+            When(created_at__gte=week_ago, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        ),
+        is_new_this_week=Case(
+            When(created_at__gte=week_ago, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+    ).order_by("recent_order", "-created_at", "name")
+
+    total_count = colleges.count()
+    if per_page_choice == "all":
+        per_page = max(total_count, 1)
+    else:
+        per_page = int(per_page_choice)
+
+    paginator = Paginator(colleges, per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
     applied_ids = set(
         Application.objects.filter(user=request.user).values_list(
             "college_id", flat=True
@@ -78,8 +110,9 @@ def all_colleges(request):
         "tracker/all_colleges.html",
         {
             "nav_active": "all_colleges",
-            "colleges": colleges,
+            "page_obj": page_obj,
             "search_query": q,
+            "per_page_choice": per_page_choice,
             "applied_college_ids": applied_ids,
         },
     )
