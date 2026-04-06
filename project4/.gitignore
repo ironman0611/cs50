@@ -13,6 +13,3 @@ __pycache__/
 *.log
 staticfiles/
 media/
-
-# AI assistants
-CLAUDE.md
